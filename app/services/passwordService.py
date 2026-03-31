@@ -1,10 +1,10 @@
-import os
 
 
 from bcrypt import hashpw,checkpw,gensalt
 from dotenv import load_dotenv
+from core.config import settings
 load_dotenv()
-SALT="salt"
+SALT=settings.SALT
 
 class passwordService:
 

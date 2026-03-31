@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     DB_PORT: int
     PORT: int
     SALT: str
+    SQLITE:  str
+    ENV: str
+    
 
     class Config:
         env_file = ".env"

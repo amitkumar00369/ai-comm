@@ -1,27 +1,34 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-import logging
 from core.config import settings
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# 🔥 Use your DB URL (SQLite / PostgreSQL)
+DATABASE_URL = settings.SQLITE
+# DATABASE_URL = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+# ✅ Production-ready engine
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,   # auto reconnect
+    pool_size=5,
+    max_overflow=10,
+    echo=False            # ❌ disable logs in production
+)
 
-DATABASE_URL = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
-
-# ✅ GLOBAL (IMPORTANT)
-engine = create_engine(DATABASE_URL, echo=True)
-
+# ✅ Session (per request)
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine
 )
 
+# ✅ Base for models
 Base = declarative_base()
 
-def connect_db():
+
+# ✅ Dependency (IMPORTANT)
+def get_db():
+    db = SessionLocal()
     try:
-        with engine.connect() as conn:
-            logger.info(f"✅ Database connected successfully: {DATABASE_URL}")
-    except Exception as e:
-        logger.error(f"❌ Database connection failed: {e}")
+        yield db
+    finally:
+        db.close()

@@ -1,7 +1,8 @@
 from fastapi import FastAPI
-from core.database import connect_db,Base,engine,SessionLocal
+from fastapi.concurrency import asynccontextmanager
+from core.database import get_db,Base,engine,SessionLocal
 from core.config import settings
-import app.models
+from sqlalchemy import text
 from fastapi import FastAPI,UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Depends
@@ -16,37 +17,55 @@ from app.middleware.auth_middleware import jwt_auth
 from app.api.v1.routes_users import userRouter
 security = HTTPBearer()
 
-app = FastAPI()
-
 import multiprocessing
-
-@app.on_event("startup")
-def startup():
-    if multiprocessing.current_process().name == "MainProcess":
-        connect_db()
-        Base.metadata.create_all(bind=engine)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🚀 App starting...")
+    
+    # ✅ Only for development (not production)
+    if settings.ENV == "dev":
+        Base.metadata.create_all(bind=engine)
+    
+    yield
+    print("🛑 App shutting down...")
+
+
+
+app = FastAPI(lifespan=lifespan)
+
+# 📁 Static files
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
-# CORS
-# app.["UPLOAD_FOLDER"] = "uploads"
 
-# 👇 THIS LINE IS THE KEY
-
+# 🌍 CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # ⚠️ restrict in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# 📌 Routes
+app.include_router(userRouter, prefix="/api/user", tags=["User-API"])
+
 
 # Include routers
 # app.include_router(commonRouter,prefix="/api",tags = ["File-Upload"])
 # app.include_router(MlRouter, prefix="/api/ml", tags=["ML-API"])
-app.include_router(userRouter, prefix="/api/user", tags=["User-API"])
+# run.include_router(userRouter, prefix="/api/user", tags=["User-API"])
 # app.include_router(userPrivateRouter, prefix="/api/user/private", tags=["User-Private-API"], dependencies=[Depends(security), Depends(jwt_auth)])
 print(f" server runing on port : http://localhost:{settings.PORT}/docs")
+
+
+@app.get("/health")
+def health_check():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "healthy"}
+    except:
+        return {"status": "unhealthy"}

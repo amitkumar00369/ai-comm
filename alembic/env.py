@@ -1,9 +1,10 @@
 from logging.config import fileConfig
+from alembic.op import f
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 from core.config import settings
-from core.database import Base
+from core.database import DATABASE_URL, Base
 import app.models   # ✅ load all models
 
 # Alembic Config
@@ -14,9 +15,11 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # ✅ Set DB URL dynamically
+# DATABASE_URL = f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+DATABASE_URL = settings.SQLITE
 config.set_main_option(
     "sqlalchemy.url",
-    f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    DATABASE_URL
 )
 
 # ✅ Metadata
