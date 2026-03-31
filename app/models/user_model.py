@@ -28,6 +28,7 @@ class User(Base,BaseMixin):
     tenant = relationship("Tenant", back_populates="users")
     plan_id = Column(Integer, ForeignKey("plans.id"))
     subscription_id = Column(Integer, ForeignKey("subscriptions.id"))
+    isApproved = Column(Boolean, default=False)
     
     
 

@@ -16,6 +16,6 @@ class commission(Base, BaseMixin):
     __tablename__ = "commissions"
 
     id = Column(Integer, primary_key=True, index=True)
-    bussinesType  = Column(Enum(bussinesType))  # "call" / "message"
+    bussinesType  = Column(Enum(bussinesType),nullable=True)  # "call" / "message"
     discount_percentage =Column(Integer)
     description = Column(String)        
